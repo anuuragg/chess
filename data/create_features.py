@@ -1,9 +1,11 @@
+import chess
 import pandas as pd
 from tqdm import tqdm
-import chess
+
 
 INPUT_PATH = "data/processed/labeled_positions.csv"
 OUTPUT_PATH = "data/processed/features.csv"
+
 
 PIECE_VALUES = {
     chess.PAWN: 1,
@@ -16,6 +18,7 @@ PIECE_VALUES = {
 
 
 def material_balance(board):
+    # White material minus Black material.
     balance = 0
 
     for piece_type, value in PIECE_VALUES.items():
@@ -26,11 +29,12 @@ def material_balance(board):
 
 
 def mobility(board):
-    # Number of legal moves available
+    # Number of legal moves available to the side to move.
     return board.legal_moves.count()
 
 
 def king_safety(board):
+    # Number of friendly pieces protecting the king.
     king_square = board.king(board.turn)
 
     if king_square is None:
@@ -42,6 +46,7 @@ def king_safety(board):
 
 
 def pawn_structure(board):
+    # Number of isolated pawns for the side to move.
     color = board.turn
     pawns = board.pieces(chess.PAWN, color)
 
@@ -60,29 +65,28 @@ def pawn_structure(board):
 
 
 def game_phase(board):
-    """Estimate game phase from remaining non-pawn material."""
+    # Estimate game phase from remaining non-pawn material.
     phase = 0
 
-    phase += len(board.pieces(chess.KNIGHT, chess.WHITE))
-    phase += len(board.pieces(chess.KNIGHT, chess.BLACK))
-
-    phase += len(board.pieces(chess.BISHOP, chess.WHITE))
-    phase += len(board.pieces(chess.BISHOP, chess.BLACK))
-
-    phase += len(board.pieces(chess.ROOK, chess.WHITE))
-    phase += len(board.pieces(chess.ROOK, chess.BLACK))
-
-    phase += len(board.pieces(chess.QUEEN, chess.WHITE))
-    phase += len(board.pieces(chess.QUEEN, chess.BLACK))
+    for piece_type in [
+        chess.KNIGHT,
+        chess.BISHOP,
+        chess.ROOK,
+        chess.QUEEN,
+    ]:
+        phase += len(board.pieces(piece_type, chess.WHITE))
+        phase += len(board.pieces(piece_type, chess.BLACK))
 
     return phase
 
 
 def is_capture(board, move):
+    # Return 1 if the move captures a piece, otherwise 0.
     return int(board.is_capture(move))
 
 
 def is_check(board, move):
+    # Return 1 if the move gives check, otherwise 0.
     board.push(move)
     result = int(board.is_check())
     board.pop()
@@ -91,34 +95,31 @@ def is_check(board, move):
 
 
 def piece_development(board):
+    # Number of knights and bishops that left their starting squares.
+    starting_squares = [
+        (chess.B1, chess.WHITE),
+        (chess.G1, chess.WHITE),
+        (chess.C1, chess.WHITE),
+        (chess.F1, chess.WHITE),
+        (chess.B8, chess.BLACK),
+        (chess.G8, chess.BLACK),
+        (chess.C8, chess.BLACK),
+        (chess.F8, chess.BLACK),
+    ]
+
     developed = 0
 
-    starting_squares = {
-        chess.WHITE: {
-            chess.B1,
-            chess.G1,
-            chess.C1,
-            chess.F1,
-        },
-        chess.BLACK: {
-            chess.B8,
-            chess.G8,
-            chess.C8,
-            chess.F8,
-        },
-    }
+    for square, color in starting_squares:
+        piece = board.piece_at(square)
 
-    for color in [chess.WHITE, chess.BLACK]:
-        for square in starting_squares[color]:
-            piece = board.piece_at(square)
-
-            if piece is None or piece.color != color:
-                developed += 1
+        if piece is None or piece.color != color:
+            developed += 1
 
     return developed
 
 
 def squares_controlled_after_move(board, move):
+    # Number of squares controlled by the moved piece.
     board.push(move)
 
     controlled = len(board.attacks(move.to_square))
@@ -147,6 +148,7 @@ def create_features():
             candidate_moves_generated += 1
 
             features = {
+                "position_id": positions_processed,
                 "fen": row["fen"],
                 "candidate_move_uci": move.uci(),
                 "material_balance": material_balance(board),
@@ -170,13 +172,24 @@ def create_features():
 
     positive_labels = features_df["label"].sum()
     negative_labels = len(features_df) - positive_labels
-    feature_count = len(features_df.columns) - 3
+
+    feature_columns = [
+        "material_balance",
+        "mobility",
+        "king_safety",
+        "pawn_structure",
+        "game_phase",
+        "is_capture",
+        "is_check",
+        "piece_development",
+        "squares_controlled",
+    ]
 
     print(f"\nPositions processed: {positions_processed:,}")
     print(f"Candidate moves generated: {candidate_moves_generated:,}")
     print(f"Positive labels: {positive_labels:,}")
     print(f"Negative labels: {negative_labels:,}")
-    print(f"Feature count: {feature_count}")
+    print(f"Feature count: {len(feature_columns)}")
     print(f"Saved to: {OUTPUT_PATH}")
 
 
