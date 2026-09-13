@@ -35,4 +35,16 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt -r requirements-dev.txt
-      - run: pytest tests/ -v
+      - run: python -m pytest tests/ -v
+
+  deploy:
+    needs: [lint, typecheck, test]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      - run: sleep 15 && curl -sf https://chess-move-api.fly.dev/health

@@ -1,7 +1,9 @@
 pre-commit
 black
-ruff
-mypy
+pytest==9.1.1
+ruff==0.16.7
+mypy==2.3.1
+httpx==0.28.1
 fastapi
 uvicorn[standard]
 python-chess
