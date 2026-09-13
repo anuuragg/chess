@@ -1,8 +1,22 @@
-.PHONY: data
+.PHONY: install install-dev lint typecheck test train clean
 
-data:
-	python data/prepare_positions.py
-	python data/label_positions.py
-	python data/create_features.py
-	python data/data_validation.py
-	python data/create_split.py
+install:
+	pip install -r requirements.txt
+
+install-dev:
+	pip install -r requirements-dev.txt
+
+lint:
+	ruff check .
+
+typecheck:
+	mypy .
+
+test:
+	pytest tests/
+
+train:
+	python model/src/train_baseline.py
+
+clean:
+	rm -rf .mypy_cache .ruff_cache
