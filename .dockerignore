@@ -1,0 +1,14 @@
+.git
+.github
+.mypy_cache
+.ruff_cache
+.pytest_cache
+venv
+__pycache__
+*.pyc
+*.ipynb
+data/raw
+data/processed
+model/notebooks
+tests
+.env

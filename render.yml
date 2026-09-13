@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: chess-api
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: starter
+    healthCheckPath: /health
+    autoDeploy: true
+    branch: main
