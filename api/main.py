@@ -5,6 +5,7 @@ from pathlib import Path
 import chess
 import torch
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -20,6 +21,13 @@ unscale_eval = dataset_module.unscale_eval
 CHECKPOINT_PATH = ROOT_DIR / "model" / "models" / "chess_cnn.pt"
 
 app = FastAPI(title="Chess Move Predictor")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = ChessCNN()
