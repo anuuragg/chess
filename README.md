@@ -1,4 +1,4 @@
-#  Chess
+# CNN Chess
 
 A CNN trained to evaluate chess positions, served through an API, with a simple
 web frontend to play against it.
